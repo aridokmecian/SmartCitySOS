@@ -17,6 +17,7 @@ import cv2
 import tensorflow as tf
 import datetime
 import argparse
+import numpy as np
 
 detection_graph, sess = detector_utils.load_inference_graph()
 
@@ -43,8 +44,6 @@ if __name__ == '__main__':
         dest='video_source',
         default=0,
         help='Device index of the camera.')
-
-        #TO DO: 1) crop videos ???
     parser.add_argument(
         '-wd',
         '--width',
@@ -60,11 +59,39 @@ if __name__ == '__main__':
         default=1088,
         help='Height of the frames in the video stream.')
     parser.add_argument(
+        '-wdtcrp',
+        '--width_cropped',
+        dest='width_cropped',
+        type=int,
+        default=1920,
+        help='Width of the frames on which inference is to be done.')
+    parser.add_argument(
+        '-htcrp',
+        '--height_cropped',
+        dest='height_cropped',
+        type=int,
+        default=1088,
+        help='Height of the frames on which inference is to be done.')
+    parser.add_argument(
+        '-crnx',
+        '--corner_x',
+        dest='top_left_x',
+        type=int,
+        default=0,
+        help='top left corner x (w) of the frames on which inference is to be done.')
+    parser.add_argument(
+        '-crny',
+        '--corner_y',
+        dest='top_left_y',
+        type=int,
+        default=0,
+        help='top left corner y (h) of the frames on which inference is to be done.')
+    parser.add_argument( #USAGE: 0=no video, 1=infer full res video, 2=infer cropped video + display full res video
         '-ds',
         '--display',
         dest='display',
         type=int,
-        default=1,
+        default=2,
         help='Display the detected images using OpenCV. This reduces FPS')
     parser.add_argument(
         '-num-w',
@@ -94,12 +121,30 @@ if __name__ == '__main__':
 
     cv2.namedWindow('Single-Threaded Detection', cv2.WINDOW_NORMAL)
 
-    while True:
+
+    print('args.top_left_x ='); print(args.top_left_x) #f'args.top_left_x = {args.top_left_x}')
+    print('args.top_left_y ='); print(args.top_left_y)
+
+    print('args.height_cropped ='); print(args.height_cropped)
+    print('args.width_cropped ='); print(args.width_cropped)
+
+    while cap.isOpened():
         # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
         ret, image_np = cap.read()
         # image_np = cv2.flip(image_np, 1)
+        
+        print('image_np.shape=');print(image_np.shape)
+        print('asserted?=');print((args.height,args.width,3))
+
+        #Crop to frame
+        if (args.display == 2):
+            assert image_np.shape == (args.height,args.width,3), 'Image not a 3D array'
+
+            crp_image_np = image_np[args.top_left_y:args.top_left_y+args.height_cropped, 
+                                    args.top_left_x:args.top_left_x+args.height_cropped, :]
+
         try:
-            image_np = cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
+            crp_image_np = cv2.cvtColor(crp_image_np, cv2.COLOR_BGR2RGB)
         except:
             print("Error converting to RGB")
 
@@ -107,12 +152,39 @@ if __name__ == '__main__':
         # while scores contains the confidence for each of these boxes.
         # Hint: If len(boxes) > 1 , you may assume you have found atleast one hand (within your score threshold)
 
-        boxes, scores = detector_utils.detect_objects(image_np,
+        boxes, scores = detector_utils.detect_objects(crp_image_np,
                                                       detection_graph, sess)
+
+        print(boxes.shape)
+        assert boxes.shape == (100,4), 'Not 100x4 array'
+
+        uncrp_boxes=np.zeros((2,4))
+
+        #Add bounding boxes
+        for i in range(num_hands_detect):
+            #First get corner pixels
+            print('left decimal='); print(boxes[i][1])
+            print('right decimal='); print(boxes[i][3])
+            print('top decimal='); print(boxes[i][0])
+            print('bottom decimal='); print(boxes[i][2])
+            (left, right, top, bottom) = (boxes[i][1] * args.width_cropped, boxes[i][3] * args.width_cropped,
+                                          boxes[i][0] * args.height_cropped, boxes[i][2] * args.height_cropped)
+
+            print('Coords inside=');print((left, right, top, bottom));print('\n')
+            
+            #Add offsets and convert back to box objects
+            (left_w_offs, right_w_offs, top_w_offs, bottom_w_offs) = (left + args.top_left_x, right + args.top_left_x, top + args.top_left_y, bottom + args.top_left_y)
+
+            print('im_height=');print(im_height)
+
+            (uncrp_boxes[i][1],uncrp_boxes[i][3],uncrp_boxes[i][0],uncrp_boxes[i][2]) = (left_w_offs/im_width,right_w_offs/im_width,top_w_offs/im_height,bottom_w_offs/im_height)
+            print('Decimals outside='); print((uncrp_boxes[i][1],uncrp_boxes[i][3],uncrp_boxes[i][0],uncrp_boxes[i][2]))
+
+            assert (uncrp_boxes[i][0] < 1) & (uncrp_boxes[i][1] < 1) & (uncrp_boxes[i][2] < 1) & (uncrp_boxes[i][3] < 1), 'Improper uncropped image boxes'
 
         # draw bounding boxes on frame
         detector_utils.draw_box_on_image(num_hands_detect, args.score_thresh,
-                                         scores, boxes, im_width, im_height,
+                                         scores, uncrp_boxes, im_width, im_height,
                                          image_np)
 
         # Calculate Frames per second (FPS)
