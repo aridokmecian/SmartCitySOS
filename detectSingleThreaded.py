@@ -107,6 +107,15 @@ if __name__ == '__main__':
         type=int,
         default=5,
         help='Size of the queue.')
+
+    #SAMPLE CALL (for video clip #9): python3 detectSingleThreaded.py -crnx 700 -crny 480 -wdtcrp 500 -htcrp 400 -src ~/Documents/indoor9.mp4
+    
+    # max number of hands we want to detect/track
+    num_hands_detect = 1
+
+    ALARM_REGION_TOP_FRAC = 0.2
+
+
     args = parser.parse_args()
 
     cap = cv2.VideoCapture(args.video_source)
@@ -116,8 +125,7 @@ if __name__ == '__main__':
     start_time = datetime.datetime.now()
     num_frames = 0
     im_width, im_height = (cap.get(3), cap.get(4))
-    # max number of hands we want to detect/track
-    num_hands_detect = 2
+    
 
     cv2.namedWindow('Single-Threaded Detection', cv2.WINDOW_NORMAL)
 
@@ -198,12 +206,20 @@ if __name__ == '__main__':
                 detector_utils.draw_fps_on_image("FPS : " + str(int(fps)),
                                                  image_np)
 
+            #### LOGIC FOR ALARM DETECTION: top left corner y within ALARM_REGION_TOP_FRAC
+
+            #if()
+
             cv2.imshow('Single-Threaded Detection',
                        cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR))
 
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 cv2.destroyAllWindows()
                 break
+
+        
+
+
         else:
             print("frames processed: ", num_frames, "elapsed time: ",
                   elapsed_time, "fps: ", str(int(fps)))
