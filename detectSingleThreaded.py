@@ -35,27 +35,29 @@ if __name__ == '__main__':
         '--fps',
         dest='fps',
         type=int,
-        default=1,
+        default=14.95,
         help='Show FPS on detection/display visualization')
-    parser.add_argument(
+    parser.add_argument( #TO DO: video source file.
         '-src',
         '--source',
         dest='video_source',
         default=0,
         help='Device index of the camera.')
+
+        #TO DO: 1) crop videos ???
     parser.add_argument(
         '-wd',
         '--width',
         dest='width',
         type=int,
-        default=320,
+        default=1920,
         help='Width of the frames in the video stream.')
     parser.add_argument(
         '-ht',
         '--height',
         dest='height',
         type=int,
-        default=180,
+        default=1088,
         help='Height of the frames in the video stream.')
     parser.add_argument(
         '-ds',
@@ -71,7 +73,7 @@ if __name__ == '__main__':
         type=int,
         default=4,
         help='Number of workers.')
-    parser.add_argument(
+    parser.add_argument( #TO DO: TBD
         '-q-size',
         '--queue-size',
         dest='queue_size',
