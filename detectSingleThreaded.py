@@ -190,6 +190,16 @@ if __name__ == '__main__':
 
             assert (uncrp_boxes[i][0] < 1) & (uncrp_boxes[i][1] < 1) & (uncrp_boxes[i][2] < 1) & (uncrp_boxes[i][3] < 1), 'Improper uncropped image boxes'
 
+
+        #### LOGIC FOR ALARM DETECTION: top left corner y within ALARM_REGION_TOP_FRAC
+        alarm_str = 'False'
+
+        if(boxes[0][0]<ALARM_REGION_TOP_FRAC):
+            alarm_str = 'True'
+
+        detector_utils.draw_str_on_image("Alarm : " + alarm_str, image_np, round(0.8*im_width), round(0.8*im_height))
+        
+
         # draw bounding boxes on frame
         detector_utils.draw_box_on_image(num_hands_detect, args.score_thresh,
                                          scores, uncrp_boxes, im_width, im_height,
@@ -206,9 +216,7 @@ if __name__ == '__main__':
                 detector_utils.draw_fps_on_image("FPS : " + str(int(fps)),
                                                  image_np)
 
-            #### LOGIC FOR ALARM DETECTION: top left corner y within ALARM_REGION_TOP_FRAC
-
-            #if()
+            print('Alarm = '); print(alarm_str)
 
             cv2.imshow('Single-Threaded Detection',
                        cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR))
