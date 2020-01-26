@@ -65,6 +65,10 @@ def draw_fps_on_image(fps, image_np):
     cv2.putText(image_np, fps, (20, 50),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.75, (77, 255, 9), 2)
 
+def draw_str_on_image(string1, image_np, loc_x,loc_y):
+    cv2.putText(image_np, string1, (loc_x, loc_y),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.75, (77, 255, 9), 2)
+
 
 # Actual detection .. generate scores and bounding boxes given an image
 def detect_objects(image_np, detection_graph, sess):
