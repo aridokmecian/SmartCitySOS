@@ -7,11 +7,11 @@ account_sid = 'place_key_here'
 auth_token = 'place_key_here'
 client = Client(account_sid, auth_token)
 
-message = client.messages \
-    .create(
-         body='Hi Ari im a bot!',
-         from_='+13437002917',
-         to='+16476086035'
-     )
-
-print(message.sid)
+def send_sms():
+    message = client.messages \
+        .create(
+             body='Suspicious activity has been reported!',
+            from_='+13437002917',
+            to='+16476086035'
+        )
+    print(message.sid)
