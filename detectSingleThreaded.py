@@ -19,9 +19,28 @@ import datetime
 import argparse
 import numpy as np
 
-import send_sms #Script to send SMS if alarm
+#import send_sms #Script to send SMS if alarm
 
 detection_graph, sess = detector_utils.load_inference_graph()
+
+def send_sms():
+    from twilio.rest import Client
+
+    # Your Account Sid and Auth Token from twilio.com/console
+    # DANGER! This is insecure. See http://twil.io/secure
+    account_sid = 'AC468e8e00e4f9472b4851cd77e533cd91'
+    auth_token = '8b9348526a36abd1852dc554ebbd9e05'
+    client = Client(account_sid, auth_token)
+
+    message = client.messages \
+            .create(
+                body='Suspicious activity has been reported!',
+                from_='+13437002917',
+                to='+16476086035'
+            )
+   
+    print(message.sid)
+
 
 if __name__ == '__main__':
 
@@ -31,7 +50,7 @@ if __name__ == '__main__':
         '--scorethreshold',
         dest='score_thresh',
         type=float,
-        default=0.2,
+        default=0.5,
         help='Score threshold for displaying bounding boxes')
     parser.add_argument(
         '-fps',
@@ -110,7 +129,10 @@ if __name__ == '__main__':
         default=5,
         help='Size of the queue.')
 
-    #SAMPLE CALL (for video clip #9): python3 detectSingleThreaded.py -crnx 700 -crny 480 -wdtcrp 500 -htcrp 400 -src ~/Documents/indoor9.mp4
+    #SAMPLE CALL (for video clip #9):
+    # python3 detectSingleThreaded.py -crnx 700 -crny 480 -wdtcrp 500 -htcrp 400 -src ~/Documents/final1.mp4
+    # python3 detectSingleThreaded.py -crnx 760 -crny 0 -wdtcrp 470 -htcrp 1088 -src ~/Documents/final2.mp4
+    # python3 detectSingleThreaded.py -crnx 750 -crny 0 -wdtcrp 450 -htcrp 1088 -src ~/Documents/final3.mp4
     
     # max number of hands we want to detect/track
     num_hands_detect = 1
@@ -192,7 +214,7 @@ if __name__ == '__main__':
             (uncrp_boxes[i][1],uncrp_boxes[i][3],uncrp_boxes[i][0],uncrp_boxes[i][2]) = (left_w_offs/im_width,right_w_offs/im_width,top_w_offs/im_height,bottom_w_offs/im_height)
             print('Decimals outside='); print((uncrp_boxes[i][1],uncrp_boxes[i][3],uncrp_boxes[i][0],uncrp_boxes[i][2]))
 
-            assert (uncrp_boxes[i][0] < 1) & (uncrp_boxes[i][1] < 1) & (uncrp_boxes[i][2] < 1) & (uncrp_boxes[i][3] < 1), 'Improper uncropped image boxes'
+            assert (not(uncrp_boxes[i][0] > 1)) & (not(uncrp_boxes[i][1] > 1)) & (not(uncrp_boxes[i][2] > 1)) & (not(uncrp_boxes[i][3] > 1)), 'Improper uncropped image boxes'
 
         # draw bounding boxes on frame
         detector_utils.draw_box_on_image(num_hands_detect, args.score_thresh,
@@ -213,10 +235,11 @@ if __name__ == '__main__':
             #### LOGIC FOR ALARM DETECTION: top left corner y within ALARM_REGION_TOP_FRAC
             alarm_str = 'False'
 
-            if(boxes[0][0]<ALARM_REGION_TOP_FRAC)&(NUM_ALARMS<1):
-                alarm_str = 'True'
-                #Send SMS if alarm
-                send_sms()
+            if(boxes[0][0]<ALARM_REGION_TOP_FRAC):
+                if(NUM_ALARMS==5): #ignore the first few (error)
+                    alarm_str = 'True'
+                    #Send SMS if alarm
+                    send_sms()
                 NUM_ALARMS = NUM_ALARMS +1 
 
             detector_utils.draw_str_on_image("Alarm : " + alarm_str, image_np, round(0.8*im_width), round(0.8*im_height))
